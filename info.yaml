@@ -1,17 +1,17 @@
 # Tiny Tapeout project information
 project:
-  title:        "test_1"      # Project title
+  title:        "iir biquad filter "      # Project title
   author:       "praneel"      # Your name
   discord:      ""      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  "intital testing "      # One line description of what your project does
+  description:  "a direct form 1 iir biquad filter"      # One line description of what your project does
   language:     "Verilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
-  clock_hz:     50       # Clock frequency in Hz (or 0 if not applicable)
+  clock_hz:     50000000       # Clock frequency in Hz (or 0 if not applicable)
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
   tiles: "1x1"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
-  top_module:  "tt_um_example"
+  top_module:  "tt_um_iir_filter"
 
   # List your project's source files here.
   # Source files must be in ./src and you must list each source file separately, one per line.
@@ -44,6 +44,22 @@ pinout:
   uo[7]: "Product bit 7 (MSB)"
 
   # Bidirectional pins
+  ui[0]: "x[n] bit 0"
+  ui[1]: "x[n] bit 1"
+  ui[2]: "x[n] bit 2"
+  ui[3]: "x[n] bit 3"
+  ui[4]: "x[n] bit 4"
+  ui[5]: "x[n] bit 5"
+  ui[6]: "x[n] bit 6"
+  ui[7]: "x[n] bit 7"
+  uo[0]: "y[n] bit 0"
+  uo[1]: "y[n] bit 1"
+  uo[2]: "y[n] bit 2"
+  uo[3]: "y[n] bit 3"
+  uo[4]: "y[n] bit 4"
+  uo[5]: "y[n] bit 5"
+  uo[6]: "y[n] bit 6"
+  uo[7]: "y[n] bit 7"
   uio[0]: "unused"
   uio[1]: "unused"
   uio[2]: "unused"
@@ -52,6 +68,4 @@ pinout:
   uio[5]: "unused"
   uio[6]: "unused"
   uio[7]: "unused"
-
-# Do not change!
 yaml_version: 6

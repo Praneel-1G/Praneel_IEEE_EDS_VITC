@@ -11,7 +11,7 @@ module tb ();
     $dumpfile("tb.fst");
     $dumpvars(0, tb);
     #1;
-  end
+  end //
 
   // Wire up the inputs and outputs:
   reg clk;

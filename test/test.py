@@ -7,7 +7,7 @@ from cocotb.triggers import ClockCycles
 
 
 @cocotb.test()
-async def test_iir_filter(dut):
+async def test_fir_filter(dut):
     dut._log.info("starting iir biquad test..")
 
     # Set the clock period to  (50MHz)

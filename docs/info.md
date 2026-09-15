@@ -8,9 +8,7 @@ You can also include images in this folder and reference them in the markdown. E
 -->
 
 ## How it works
-
-fir dont know ?
+simple counter duh!!!
 ## How to test
-
-refer te readme 
+run the cotcob python file.
 

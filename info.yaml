@@ -1,9 +1,9 @@
 # Tiny Tapeout project information
 project:
-  title:        "fir biquad filter "      # Project title
+  title:        "An 8 bit counter"      # Project title
   author:       "praneel"      # Your name
   discord:      ""      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  "a dsp filter using a 4 stage delay"      # One line description of what your project does
+  description:  "it is a simple 8 bit sequential counter"      # One line description of what your project does
   language:     "Verilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
   clock_hz:     50000000       # Clock frequency in Hz (or 0 if not applicable)
 
@@ -11,7 +11,7 @@ project:
   tiles: "1x1"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
-  top_module:  "tt_um_fir_filter"
+  top_module:  "tt_um_counter"
 
   # List your project's source files here.
   # Source files must be in ./src and you must list each source file separately, one per line.
@@ -22,22 +22,22 @@ project:
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
 pinout:
-  ui[0]: "Data in bit 0"
-  ui[1]: "Data in bit 1"
-  ui[2]: "Data in bit 2"
-  ui[3]: "Data in bit 3"
-  ui[4]: "Data in bit 4"
-  ui[5]: "Data in bit 5"
-  ui[6]: "Data in bit 6"
-  ui[7]: "Data in bit 7"
-  uo[0]: "Filtered out bit 0"
-  uo[1]: "Filtered out bit 1"
-  uo[2]: "Filtered out bit 2"
-  uo[3]: "Filtered out bit 3"
-  uo[4]: "Filtered out bit 4"
-  uo[5]: "Filtered out bit 5"
-  uo[6]: "Filtered out bit 6"
-  uo[7]: "Filtered out bit 7"
+  ui[0]: "unused bit 0"
+  ui[1]: "unused bit 1"
+  ui[2]: "unused bit 2"
+  ui[3]: "unused bit 3"
+  ui[4]: "unused bit 4"
+  ui[5]: "unused bit 5"
+  ui[6]: "unused bit 6"
+  ui[7]: "unused bit 7"
+  uo[0]: "counter output bit 0"
+  uo[1]: "counter output bit 1"
+  uo[2]: "counter output bit 2"
+  uo[3]: "counter output bit 3"
+  uo[4]: "counter output bit 4"
+  uo[5]: "counter output bit 5"
+  uo[6]: "counter output bit 6"
+  uo[7]: "counter output bit 7"
   uio[0]: "unused"
   uio[1]: "unused"
   uio[2]: "unused"

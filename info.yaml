@@ -11,7 +11,7 @@ project:
 
   # This is an intentionally area-conscious starting point. Run the TinyTapeout
   # flow before tapeout and adjust the tile count from actual synthesis results.
-  tiles: "2x2"
+  tiles: "6x2"
   top_module:  "tt_um_protocol_nexus"
 
   source_files:

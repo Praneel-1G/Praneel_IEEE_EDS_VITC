@@ -1,14 +1,5 @@
-<!---
+# Tiny Protocol Nexus
 
-This file is used to generate your project datasheet. Please fill in the information below and delete any unused
-sections.
+Tiny Protocol Nexus is a protocol-focused TinyTapeout design combining AXI4-Lite and APB4 transaction engines with a protocol checker, programmable fault injection, performance counters, and a transaction trace buffer.
 
-You can also include images in this folder and reference them in the markdown. Each image must be less than
-512 kb in size, and the combined size of all images must be less than 1 MB.
--->
-
-## How it works
-simple counter duh!!!
-## How to test
-run the cotcob python file.
-
+See the repository README for the host framing protocol and the cocotb test for executable transaction examples.

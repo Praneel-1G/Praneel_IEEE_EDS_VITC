@@ -1,50 +1,48 @@
-# Tiny Tapeout project information
+# SPDX-FileCopyrightText: © 2026 Tiny Protocol Nexus
+# SPDX-License-Identifier: Apache-2.0
+
 project:
-  title:        "An 8 bit counter"      # Project title
-  author:       "praneel"      # Your name
-  discord:      ""      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  "it is a simple 8 bit sequential counter"      # One line description of what your project does
-  language:     "Verilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
-  clock_hz:     50000000       # Clock frequency in Hz (or 0 if not applicable)
+  title:        "Tiny Protocol Nexus"
+  author:       "praneel"
+  discord:      ""
+  description:  "AXI4-Lite/APB4 protocol gateway, checker, trace buffer and fault injector"
+  language:     "Verilog"
+  clock_hz:     50000000
 
-  # How many tiles your design occupies? A single tile is about 167x108 uM.
-  tiles: "1x1"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
+  # This is an intentionally area-conscious starting point. Run the TinyTapeout
+  # flow before tapeout and adjust the tile count from actual synthesis results.
+  tiles: "2x2"
+  top_module:  "tt_um_protocol_nexus"
 
-  # Your top module name must start with "tt_um_". Make it unique by including your github username:
-  top_module:  "tt_um_counter"
-
-  # List your project's source files here.
-  # Source files must be in ./src and you must list each source file separately, one per line.
-  # Don't forget to also update `PROJECT_SOURCES` in test/Makefile.
   source_files:
     - "project.v"
 
-# The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
-# This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
 pinout:
-  ui[0]: "unused bit 0"
-  ui[1]: "unused bit 1"
-  ui[2]: "unused bit 2"
-  ui[3]: "unused bit 3"
-  ui[4]: "unused bit 4"
-  ui[5]: "unused bit 5"
-  ui[6]: "unused bit 6"
-  ui[7]: "unused bit 7"
-  uo[0]: "counter output bit 0"
-  uo[1]: "counter output bit 1"
-  uo[2]: "counter output bit 2"
-  uo[3]: "counter output bit 3"
-  uo[4]: "counter output bit 4"
-  uo[5]: "counter output bit 5"
-  uo[6]: "counter output bit 6"
-  uo[7]: "counter output bit 7"
-  uio[0]: "unused"
-  uio[1]: "unused"
-  uio[2]: "unused"
-  uio[3]: "unused"
-  uio[4]: "unused"
-  uio[5]: "unused"
-  uio[6]: "unused"
-  uio[7]: "unused"
+  ui[0]: "HOST_DATA[0]"
+  ui[1]: "HOST_DATA[1]"
+  ui[2]: "HOST_DATA[2]"
+  ui[3]: "HOST_DATA[3]"
+  ui[4]: "HOST_DATA[4]"
+  ui[5]: "HOST_DATA[5]"
+  ui[6]: "HOST_DATA[6]"
+  ui[7]: "HOST_DATA[7]"
+
+  uo[0]: "RESPONSE[0]"
+  uo[1]: "RESPONSE[1]"
+  uo[2]: "RESPONSE[2]"
+  uo[3]: "RESPONSE[3]"
+  uo[4]: "RESPONSE[4]"
+  uo[5]: "RESPONSE[5]"
+  uo[6]: "RESPONSE[6]"
+  uo[7]: "RESPONSE[7]"
+
+  uio[0]: "RESP_VALID (output)"
+  uio[1]: "BUSY (output)"
+  uio[2]: "ERROR (output)"
+  uio[3]: "TRACE_VALID (output)"
+  uio[4]: "CMD_STB (input)"
+  uio[5]: "RSP_READY (input)"
+  uio[6]: "reserved"
+  uio[7]: "reserved"
 
 yaml_version: 6

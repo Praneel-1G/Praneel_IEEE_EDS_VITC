@@ -18,18 +18,27 @@ module tt_um_approx_mac_coprocessor (
     input  wire       rst_n     // reset_n - low to reset
 );
 
+    // --- FIX 10: Safely tie off unused signals ---
+    wire _unused = &{
+        ena,
+        uio_in,
+        ui_in[7:3],
+        1'b0
+    };
+
+    // --- FIX 2: Correct IO Enable values for "unused" status ---
+    assign uio_oe  = 8'h00; 
+    assign uio_out = 8'h00;
+
     // Pin mappings
     wire sclk = ui_in[0];
     wire mosi = ui_in[1];
     wire cs_n = ui_in[2];
 
-    assign uio_oe  = 8'hFF;     // All bidir configured as outputs
-    assign uio_out = 8'b0;
-
     // SPI edge detection via system clock oversampling
     reg [2:0] sclk_r;
     reg [1:0] mosi_r;
-    reg [1:0] cs_n_r;
+    reg [1:0] cs_n_r; 
 
     always @(posedge clk) begin
         if (!rst_n) begin
@@ -46,7 +55,6 @@ module tt_um_approx_mac_coprocessor (
     wire sclk_rise = (sclk_r[2:1] == 2'b01);
     wire sclk_fall = (sclk_r[2:1] == 2'b10);
     wire cs_active = ~cs_n_r[1];
-    wire cs_fall   = (cs_n_r[2:1] == 2'b10);
 
     // SPI Receiver State
     reg [2:0] bit_cnt;
@@ -108,23 +116,22 @@ module tt_um_approx_mac_coprocessor (
 
     // Time-Multiplexed Approximate MAC Engine
     reg [2:0]  mac_state;
-    reg [15:0] acc;
+    reg [17:0] acc;       // FIX 6/7: Expanded to 18-bit for safety against 255*255*4
     reg [7:0]  tx_data;
 
     reg [7:0]  mul_a;
     reg [7:0]  mul_b;
 
-    // --- THE APPROXIMATION FIX ---
-    // Explicitly define 8-bit intermediate wires. This forces Verilog to 
-    // evaluate the multiplication in an 8-bit context, preventing truncation.
-    wire [7:0] p_hh = mul_a[7:4] * mul_b[7:4];
-    wire [7:0] p_hl = mul_a[7:4] * mul_b[3:0];
-    wire [7:0] p_lh = mul_a[3:0] * mul_b[7:4];
+    // --- FIX 4/5: EXPLICIT 8-BIT PARTIAL PRODUCTS ---
+    // Forces Verilog to retain the width required for intermediate math
+    wire [7:0] pp_hh = mul_a[7:4] * mul_b[7:4];
+    wire [7:0] pp_hl = mul_a[7:4] * mul_b[3:0];
+    wire [7:0] pp_lh = mul_a[3:0] * mul_b[7:4];
     
-    wire [15:0] mul_out = {p_hh, 8'b0} + {4'b0, p_hl, 4'b0} + {4'b0, p_lh, 4'b0};
+    wire [15:0] mul_out = {pp_hh, 8'b0} + {4'b0, pp_hl, 4'b0} + {4'b0, pp_lh, 4'b0};
     
-    // Explicitly calculate the 16-bit sum to avoid shift operator width ambiguity
-    wire [15:0] next_acc = acc + mul_out;
+    // --- FIX 8: Explicit Accumulator behavior ---
+    wire [17:0] acc_next = acc + {{2{1'b0}}, mul_out};
 
     always @(*) begin
         case (mac_state)
@@ -145,12 +152,12 @@ module tt_um_approx_mac_coprocessor (
         end else begin
             case (mac_state)
                 0: if (rx_ready && state == STREAM) mac_state <= 1;
-                1: begin acc <= mul_out;       mac_state <= 2; end
-                2: begin acc <= next_acc;      mac_state <= 3; end
-                3: begin acc <= next_acc;      mac_state <= 4; end
+                1: begin acc <= {{2{1'b0}}, mul_out}; mac_state <= 2; end
+                2: begin acc <= acc_next;             mac_state <= 3; end
+                3: begin acc <= acc_next;             mac_state <= 4; end
                 4: begin
-                    // Safely store the top 8 bits using part-selects
-                    tx_data <= next_acc[15:8]; 
+                    // Scale to 8 bits using expected divide-by-256 truncation mapping
+                    tx_data <= acc_next[15:8]; 
                     
                     // Shift Data Delay Line
                     D[0] <= rx_byte;
@@ -168,10 +175,9 @@ module tt_um_approx_mac_coprocessor (
     always @(posedge clk) begin
         if (!rst_n || !cs_active) begin
             tx_shift <= 0;
-        end else if (cs_fall) begin
-            tx_shift <= tx_data;         // Preload MSB on CS drop
+        // FIX 3: Removed invalid cs_n_r[2:1] branch
         end else if (mac_state == 4) begin
-            tx_shift <= next_acc[15:8];  // Safely load computed data for next byte
+            tx_shift <= acc_next[15:8];  // Loads computation for next SPI shift cycle
         end else if (sclk_fall) begin
             if (bit_cnt != 0) 
                 tx_shift <= {tx_shift[6:0], 1'b0};

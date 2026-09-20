@@ -1,48 +1,45 @@
-# SPDX-FileCopyrightText: © 2026 Tiny Protocol Nexus
+# SPDX-FileCopyrightText: © 2026 Your Name
 # SPDX-License-Identifier: Apache-2.0
 
 project:
-  title:        "Tiny Protocol Nexus"
+  title:        "Approximate DSP: Time-Multiplexed MAC Coprocessor"
   author:       "praneel"
   discord:      ""
-  description:  "AXI4-Lite/APB4 protocol gateway, checker, trace buffer and fault injector"
+  description:  "An 8-bit SPI-programmable approximate DSP block featuring a 4-tap time-multiplexed approximate MAC for Smart Dust Edge AI."
   language:     "Verilog"
   clock_hz:     50000000
-
-  # This is an intentionally area-conscious starting point. Run the TinyTapeout
-  # flow before tapeout and adjust the tile count from actual synthesis results.
-  tiles: "6x2"
-  top_module:  "tt_um_protocol_nexus"
-
+  tiles:        "1x1"
+  top_module:   "tt_um_approx_mac_coprocessor"
+  
   source_files:
     - "project.v"
 
 pinout:
-  ui[0]: "HOST_DATA[0]"
-  ui[1]: "HOST_DATA[1]"
-  ui[2]: "HOST_DATA[2]"
-  ui[3]: "HOST_DATA[3]"
-  ui[4]: "HOST_DATA[4]"
-  ui[5]: "HOST_DATA[5]"
-  ui[6]: "HOST_DATA[6]"
-  ui[7]: "HOST_DATA[7]"
+  ui[0]: "SCLK (SPI Clock)"
+  ui[1]: "MOSI (SPI Data In)"
+  ui[2]: "CS_N (SPI Chip Select)"
+  ui[3]: "unused"
+  ui[4]: "unused"
+  ui[5]: "unused"
+  ui[6]: "unused"
+  ui[7]: "unused"
 
-  uo[0]: "RESPONSE[0]"
-  uo[1]: "RESPONSE[1]"
-  uo[2]: "RESPONSE[2]"
-  uo[3]: "RESPONSE[3]"
-  uo[4]: "RESPONSE[4]"
-  uo[5]: "RESPONSE[5]"
-  uo[6]: "RESPONSE[6]"
-  uo[7]: "RESPONSE[7]"
+  uo[0]: "MISO (SPI Data Out)"
+  uo[1]: "DEBUG_STATE_LOAD"
+  uo[2]: "DEBUG_STATE_STREAM"
+  uo[3]: "unused"
+  uo[4]: "unused"
+  uo[5]: "unused"
+  uo[6]: "unused"
+  uo[7]: "unused"
 
-  uio[0]: "RESP_VALID (output)"
-  uio[1]: "BUSY (output)"
-  uio[2]: "ERROR (output)"
-  uio[3]: "TRACE_VALID (output)"
-  uio[4]: "CMD_STB (input)"
-  uio[5]: "RSP_READY (input)"
-  uio[6]: "reserved"
-  uio[7]: "reserved"
+  uio[0]: "unused"
+  uio[1]: "unused"
+  uio[2]: "unused"
+  uio[3]: "unused"
+  uio[4]: "unused"
+  uio[5]: "unused"
+  uio[6]: "unused"
+  uio[7]: "unused"
 
 yaml_version: 6

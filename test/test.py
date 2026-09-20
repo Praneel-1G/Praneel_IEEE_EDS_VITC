@@ -5,34 +5,62 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles
 
+# Python model of the approximate FIR Engine
+class ApproxFIR:
+    def __init__(self, coeffs):
+        self.coeffs = coeffs
+        self.delay = [0, 0, 0]
+
+    def approx_mult(self, a, b):
+        a_l = a & 0xF
+        b_l = b & 0xF
+        # Approximation Formula: AB - A_L * B_L
+        return (a * b) - (a_l * b_l)
+
+    def process(self, x):
+        taps = [x] + self.delay
+        acc = 0
+        for t, c in zip(taps, self.coeffs):
+            acc += self.approx_mult(t, c)
+            
+        self.delay = [x, self.delay[0], self.delay[1]]
+        
+        # Scale to match hardware: (Accumulator) >> 8
+        return (acc >> 8) & 0xFF
+
+
 async def spi_transfer(dut, byte_out):
-    """Performs an 8-bit SPI Mode 0 transfer."""
+    """Performs an 8-bit SPI Mode 0 transfer with tight timing margins."""
     byte_in = 0
     for i in range(8):
-        # Set MOSI and SCLK = 0
         bit = 1 if (byte_out & (1 << (7 - i))) else 0
-        dut.ui_in.value = (bit << 1) | 0x00  # CS_N=0, MOSI=bit, SCLK=0
+        
+        # SCLK = 0 (Setup MOSI)
+        dut.ui_in.value = (bit << 1) | 0x00
         await ClockCycles(dut.clk, 10)
         
-        # SCLK = 1 (RTL samples on rising edge)
+        # SCLK = 1 (RTL samples MOSI on this rising edge)
         dut.ui_in.value = (bit << 1) | 0x01
-        await ClockCycles(dut.clk, 10)
         
-        # Capture MISO using modern to_unsigned() 
+        # --- FIX 12/13: Sample MISO immediately after the rising edge ---
+        await ClockCycles(dut.clk, 1) 
         miso_bit = dut.uo_out.value.to_unsigned() & 1
         byte_in = (byte_in << 1) | miso_bit
         
-        # SCLK = 0 (RTL prepares next bit on falling edge)
+        # Wait a few cycles before falling edge
+        await ClockCycles(dut.clk, 4)
+        
+        # SCLK = 0 (RTL shifts next MISO bit on this falling edge)
         dut.ui_in.value = (bit << 1) | 0x00
         await ClockCycles(dut.clk, 5)
         
     return byte_in
 
+
 @cocotb.test()
 async def test_approximate_mac(dut):
     dut._log.info("Starting Time-Multiplexed Approximate MAC test")
 
-    # Fixed syntax: 'unit' instead of 'units'
     clock = Clock(dut.clk, 20, unit="ns") # 50 MHz clock
     cocotb.start_soon(clock.start())
 
@@ -45,14 +73,12 @@ async def test_approximate_mac(dut):
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, 10)
 
-    # ----------------------------------------------------
     # 1. Load Coefficients via SPI
-    # ----------------------------------------------------
     dut.ui_in.value = 0x00 # Drop CS_N
     await ClockCycles(dut.clk, 10)
     
     await spi_transfer(dut, 0x01) # Command: LOAD_COEFF
-    await spi_transfer(dut, 0x0A) # C0 = 10 (0x0A)
+    await spi_transfer(dut, 0x0A) # C0 = 10 
     await spi_transfer(dut, 0x0A) # C1 = 10
     await spi_transfer(dut, 0x0A) # C2 = 10
     await spi_transfer(dut, 0x0A) # C3 = 10
@@ -60,40 +86,36 @@ async def test_approximate_mac(dut):
     dut.ui_in.value = 0x04 # Raise CS_N
     await ClockCycles(dut.clk, 20)
 
-    # ----------------------------------------------------
-    # 2. Stream Data and Verify Approximation Mathematics
-    # ----------------------------------------------------
+    # --- FIX 14: Dynamic mathematical corner cases ---
+    # Testing zeros, maximal values, standard cases, and mixed values
+    test_vectors = [
+        100, 100, 100, 100,  # Standard: 100 * 10
+        0, 0, 0, 0,          # Zero flush
+        255, 255, 255, 255,  # Max range accumulator test
+        15, 16, 15, 31,      # Approximation boundary cases
+        170, 13, 0           # Mixed random
+    ]
+
+    model = ApproxFIR([10, 10, 10, 10])
+
+    # 2. Stream Data
     dut.ui_in.value = 0x00 # Drop CS_N
     await ClockCycles(dut.clk, 10)
-    
     await spi_transfer(dut, 0x02) # Command: STREAM_DATA
     
-    # Send a constant input of 100 (0x64)
-    # 
-    # Exact Math: 100 * 10 = 1000 (0x03E8)
-    # Approximate Math (Missing 4x4 LSB):
-    # A=0x64 (A_high=6, A_low=4), B=0x0A (B_high=0, B_low=10)
-    # Approx Prod = (6*0)<<8 + (6*10)<<4 + (4*0)<<4 = 960 (0x03C0)
+    prev_expected = 0 # First returned byte is always 0 (junk payload)
     
-    # Tap 1 (Time step 0) -> Sum = 960. MISO should be 960 >> 8 = 3 (0x03)
-    res1 = await spi_transfer(dut, 0x64) 
-    
-    # Tap 2 -> Sum = 960 * 2 = 1920 (0x0780). MISO = 0x07
-    res2 = await spi_transfer(dut, 0x64) 
-    assert res2 == 0x03, f"Expected 0x03, got 0x{res2:02X}"
-    
-    # Tap 3 -> Sum = 960 * 3 = 2880 (0x0B40). MISO = 0x0B
-    res3 = await spi_transfer(dut, 0x64)
-    assert res3 == 0x07, f"Expected 0x07, got 0x{res3:02X}"
-    
-    # Tap 4 -> Sum = 960 * 4 = 3840 (0x0F00). MISO = 0x0F
-    res4 = await spi_transfer(dut, 0x64)
-    assert res4 == 0x0B, f"Expected 0x0B, got 0x{res4:02X}"
+    for i, x in enumerate(test_vectors):
+        y_expected = model.process(x)
+        
+        # SPI is full duplex. The output we receive during 'x' belongs to 'x-1'
+        y_actual = await spi_transfer(dut, x)
+        
+        dut._log.info(f"Vector {i}: Input=0x{x:02X} | Received=0x{y_actual:02X} | Expected=0x{prev_expected:02X}")
+        assert y_actual == prev_expected, f"Mismatch at vector {i}: Expected 0x{prev_expected:02X}, got 0x{y_actual:02X}"
+        
+        prev_expected = y_expected
 
-    # Tap 5 (Steady State Full Pipeline) -> MISO = 0x0F
-    res5 = await spi_transfer(dut, 0x64)
-    assert res5 == 0x0F, f"Expected 0x0F, got 0x{res5:02X}"
-    
-    dut._log.info("Approximate MAC Math verified successfully!")
+    dut._log.info("All Approximate MAC corner cases passed successfully!")
     dut.ui_in.value = 0x04 # Raise CS_N
     await ClockCycles(dut.clk, 20)

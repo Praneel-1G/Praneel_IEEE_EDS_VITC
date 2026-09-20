@@ -114,13 +114,17 @@ module tt_um_approx_mac_coprocessor (
     reg [7:0]  mul_a;
     reg [7:0]  mul_b;
 
-    // --- THE APPROXIMATION ---
-    // Instead of a full 8x8 multiplier, we skip the 4x4 LSB multiplication.
-    // This dramatically reduces switching activity and gate area, proving the concept
-    // of energy-efficient approximate arithmetic for battery-less edge AI.
-    wire [15:0] mul_out = { (mul_a[7:4] * mul_b[7:4]), 8'b0 } +
-                          { 4'b0, (mul_a[7:4] * mul_b[3:0]), 4'b0 } +
-                          { 4'b0, (mul_a[3:0] * mul_b[7:4]), 4'b0 };
+    // --- THE APPROXIMATION FIX ---
+    // Explicitly define 8-bit intermediate wires. This forces Verilog to 
+    // evaluate the multiplication in an 8-bit context, preventing truncation.
+    wire [7:0] p_hh = mul_a[7:4] * mul_b[7:4];
+    wire [7:0] p_hl = mul_a[7:4] * mul_b[3:0];
+    wire [7:0] p_lh = mul_a[3:0] * mul_b[7:4];
+    
+    wire [15:0] mul_out = {p_hh, 8'b0} + {4'b0, p_hl, 4'b0} + {4'b0, p_lh, 4'b0};
+    
+    // Explicitly calculate the 16-bit sum to avoid shift operator width ambiguity
+    wire [15:0] next_acc = acc + mul_out;
 
     always @(*) begin
         case (mac_state)
@@ -142,11 +146,11 @@ module tt_um_approx_mac_coprocessor (
             case (mac_state)
                 0: if (rx_ready && state == STREAM) mac_state <= 1;
                 1: begin acc <= mul_out;       mac_state <= 2; end
-                2: begin acc <= acc + mul_out; mac_state <= 3; end
-                3: begin acc <= acc + mul_out; mac_state <= 4; end
+                2: begin acc <= next_acc;      mac_state <= 3; end
+                3: begin acc <= next_acc;      mac_state <= 4; end
                 4: begin
-                    // Store top 8 bits of 16-bit result
-                    tx_data <= (acc + mul_out) >> 8; 
+                    // Safely store the top 8 bits using part-selects
+                    tx_data <= next_acc[15:8]; 
                     
                     // Shift Data Delay Line
                     D[0] <= rx_byte;
@@ -167,7 +171,7 @@ module tt_um_approx_mac_coprocessor (
         end else if (cs_fall) begin
             tx_shift <= tx_data;         // Preload MSB on CS drop
         end else if (mac_state == 4) begin
-            tx_shift <= (acc + mul_out) >> 8; // Safely load computed data for next byte
+            tx_shift <= next_acc[15:8];  // Safely load computed data for next byte
         end else if (sclk_fall) begin
             if (bit_cnt != 0) 
                 tx_shift <= {tx_shift[6:0], 1'b0};

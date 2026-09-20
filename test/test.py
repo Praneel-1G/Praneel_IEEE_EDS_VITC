@@ -18,8 +18,8 @@ async def spi_transfer(dut, byte_out):
         dut.ui_in.value = (bit << 1) | 0x01
         await ClockCycles(dut.clk, 10)
         
-        # Capture MISO
-        miso_bit = dut.uo_out.value.integer & 1
+        # Capture MISO using modern to_unsigned() 
+        miso_bit = dut.uo_out.value.to_unsigned() & 1
         byte_in = (byte_in << 1) | miso_bit
         
         # SCLK = 0 (RTL prepares next bit on falling edge)
@@ -32,7 +32,8 @@ async def spi_transfer(dut, byte_out):
 async def test_approximate_mac(dut):
     dut._log.info("Starting Time-Multiplexed Approximate MAC test")
 
-    clock = Clock(dut.clk, 20, units="ns") # 50 MHz clock
+    # Fixed syntax: 'unit' instead of 'units'
+    clock = Clock(dut.clk, 20, unit="ns") # 50 MHz clock
     cocotb.start_soon(clock.start())
 
     # Initial Reset
@@ -74,10 +75,7 @@ async def test_approximate_mac(dut):
     # A=0x64 (A_high=6, A_low=4), B=0x0A (B_high=0, B_low=10)
     # Approx Prod = (6*0)<<8 + (6*10)<<4 + (4*0)<<4 = 960 (0x03C0)
     
-    # We output the top 8 bits (>> 8). Let's trace the shift-register accumulation:
-    
     # Tap 1 (Time step 0) -> Sum = 960. MISO should be 960 >> 8 = 3 (0x03)
-    # (Note: SPI returns the PREVIOUS computation, so res1 is junk/0)
     res1 = await spi_transfer(dut, 0x64) 
     
     # Tap 2 -> Sum = 960 * 2 = 1920 (0x0780). MISO = 0x07

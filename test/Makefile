@@ -23,6 +23,7 @@ COMPILE_ARGS    += -DFUNCTIONAL
 COMPILE_ARGS    += -DUSE_POWER_PINS
 COMPILE_ARGS    += -DSIM
 COMPILE_ARGS    += -DUNIT_DELAY=\#1
+COMPILE_ARGS    += -gno-specify       # <-- FIX 1: Ignore unsupported IHP timing blocks
 
 # --- IHP SG13G2 Verilog Primitives ---
 VERILOG_SOURCES += $(PDK_ROOT)/ihp-sg13g2/libs.ref/sg13g2_io/verilog/sg13g2_io.v

@@ -24,7 +24,7 @@ COMPILE_ARGS    += -DUSE_POWER_PINS
 COMPILE_ARGS    += -DSIM
 COMPILE_ARGS    += -DUNIT_DELAY=\#1
 
-# --- FIXED: IHP SG13G2 Verilog Primitives ---
+# --- IHP SG13G2 Verilog Primitives ---
 VERILOG_SOURCES += $(PDK_ROOT)/ihp-sg13g2/libs.ref/sg13g2_io/verilog/sg13g2_io.v
 VERILOG_SOURCES += $(PDK_ROOT)/ihp-sg13g2/libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v
 

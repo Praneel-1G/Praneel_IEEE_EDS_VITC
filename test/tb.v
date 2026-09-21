@@ -14,11 +14,8 @@ module tb ();
     wire [7:0] uio_oe;
 
     tt_um_approx_mac_coprocessor user_project (
-    // <-- FIX 2: Connect IHP power pins instead of SkyWater power pins -->
-    `ifdef GL_TEST
-        .vdd  (1'b1),
-        .vss  (1'b0),
-    `endif
+        // --- POWER PINS COMPLETELY REMOVED ---
+        // The IHP gate-level netlist does not expose them on the user boundary.
         .ui_in  (ui_in),
         .uo_out (uo_out),
         .uio_in (uio_in),
